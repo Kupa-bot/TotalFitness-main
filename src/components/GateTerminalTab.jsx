@@ -210,34 +210,30 @@ export default function GateTerminalTab() {
     };
   }, []);
 
-  // Continuous recognition loop
-  useEffect(() => {
-    if (!cameraActive) return;
-    let cancelled = false;
-    const interval = setInterval(async () => {
-      if (cancelled || scanningRef.current || !videoRef.current) return;
-      try {
-        const descriptor = await detectFaceDescriptor(videoRef.current);
-        if (cancelled || !descriptor) return;
+  // Manual single-scan handler (one scan at a time)
+  const handleCameraScan = async () => {
+    if (scanningRef.current || !cameraActive || !videoRef.current) return;
+    scanningRef.current = true;
+    try {
+      const descriptor = await detectFaceDescriptor(videoRef.current);
+      if (!descriptor) {
+        executeScan(null, activeZoneId, (60 + Math.random() * 15).toFixed(1));
+      } else {
         const match = findBestMatch(descriptor, membersRef.current);
-        scanningRef.current = true;
         if (match) {
           executeScan(match.member, activeZoneId, match.confidence);
         } else {
           executeScan(null, activeZoneId, (60 + Math.random() * 15).toFixed(1));
         }
-        setTimeout(() => {
-          scanningRef.current = false;
-        }, 1500);
-      } catch { 
-        scanningRef.current = false;
       }
-    }, 1200);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [cameraActive, activeZoneId]);
+    } catch {
+      executeScan(null, activeZoneId, (60 + Math.random() * 15).toFixed(1));
+    } finally {
+      setTimeout(() => {
+        scanningRef.current = false;
+      }, 900);
+    }
+  };
 
   // Determine access decision based on member tier and current active zone policy
   const evaluateAccess = (member, zoneId) => {
@@ -552,6 +548,15 @@ export default function GateTerminalTab() {
                   className="bg-black/80 hover:bg-black text-slate-300 border border-slate-700 p-2 rounded-xl text-xs flex items-center gap-1 shadow transition-all"
                 >
                   {soundMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5 text-accentgold" />}
+                </button>
+
+                <button
+                  disabled={isScanning || !cameraActive}
+                  onClick={handleCameraScan}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-lg flex items-center gap-1.5 transition-all disabled:opacity-50"
+                >
+                  <Camera className={`w-3.5 h-3.5 ${isScanning ? 'animate-pulse' : ''}`} />
+                  <span>Scan Face</span>
                 </button>
 
                 <button
