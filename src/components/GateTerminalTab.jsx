@@ -310,6 +310,12 @@ export default function GateTerminalTab() {
       setCurrentScan(scanResult);
       setIsScanning(false);
 
+      if (isGranted) {
+        sound.speak(`Access granted. ${scanResult.name}`);
+      } else {
+        sound.speak(`Access denied. ${scanResult.name}`);
+      }
+
       // Record to audit logs
       logAccessEvent({
         memberId: scanResult.id,
