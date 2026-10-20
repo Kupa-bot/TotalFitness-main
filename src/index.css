@@ -1,0 +1,312 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-darkbg: var(--bg-main);
+  --color-cardbg: var(--bg-card);
+  --color-cardhover: var(--bg-hover);
+  --color-accentgold: #d99b26;
+  --color-accentgoldhover: #f5af30;
+  --color-accentdark: #0e1015;
+}
+
+:root {
+  --bg-main: #111318;
+  --bg-card: #1a1d24;
+  --bg-hover: #222630;
+  color-scheme: dark;
+}
+
+html.light {
+  --bg-main: #f5f7fb;
+  --bg-card: #ffffff;
+  --bg-hover: #eef2f7;
+  color-scheme: light;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg-main);
+  color: #f3f4f6;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  min-height: 100vh;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #111318;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a2e39;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3f4555;
+}
+
+/* Biometric scanline animation */
+@keyframes scanline {
+  0% { top: 0%; opacity: 0.8; }
+  50% { opacity: 1; }
+  100% { top: 100%; opacity: 0.8; }
+}
+
+.scan-line {
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(to right, transparent, #d99b26, transparent);
+  position: absolute;
+  animation: scanline 2.2s infinite linear;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 15px rgba(217, 155, 38, 0.25); }
+  50% { box-shadow: 0 0 30px rgba(217, 155, 38, 0.5); }
+}
+
+.pulse-glow {
+  animation: pulseGlow 2.5s infinite ease-in-out;
+}
+
+@keyframes radarSweep {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.radar-sweep {
+  transform-origin: center;
+  animation: radarSweep 4s linear infinite;
+}
+
+/* ========================================================
+   LUXURY LIGHT MODE DESIGN SYSTEM OVERRIDES
+   ======================================================== */
+
+html.light body {
+  background-color: #f5f7fb;
+  color: #0f172a;
+}
+
+html.light ::-webkit-scrollbar-track {
+  background: #f1f4f9;
+}
+html.light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Light Mode Cards */
+html.light .bg-cardbg {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 8px -1px rgba(15, 23, 42, 0.03);
+}
+
+html.light .bg-cardbg:hover {
+  border-color: #cbd5e1 !important;
+}
+
+/* Header & Navigation in Light Mode */
+html.light header.bg-cardbg {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+}
+
+html.light nav button:not(.bg-accentgold) {
+  color: #475569 !important;
+}
+html.light nav button:not(.bg-accentgold):hover {
+  color: #0f172a !important;
+  background-color: #f1f5f9 !important;
+}
+
+/* Sub-containers & panels outside the camera screen */
+html.light :not(.camera-viewport-screen):not(.camera-viewport-screen *) > .bg-slate-900,
+html.light div.bg-slate-900:not(.camera-viewport-screen *),
+html.light div.bg-slate-900\/90:not(.camera-viewport-screen *),
+html.light div.bg-slate-900\/80:not(.camera-viewport-screen *),
+html.light div.bg-slate-900\/60:not(.camera-viewport-screen *),
+html.light div.bg-slate-900\/40:not(.camera-viewport-screen *) {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #1e293b;
+}
+
+html.light div.bg-slate-950:not(.camera-viewport-screen *),
+html.light div.bg-slate-950\/60:not(.camera-viewport-screen *) {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.light div.bg-slate-800:not(.camera-viewport-screen *),
+html.light div.bg-slate-800\/80:not(.camera-viewport-screen *),
+html.light div.bg-slate-800\/60:not(.camera-viewport-screen *) {
+  background-color: #eef2f7 !important;
+  border-color: #e2e8f0 !important;
+  color: #334155;
+}
+
+/* Form inputs & dropdowns */
+html.light input:not(.camera-viewport-screen *),
+html.light select:not(.camera-viewport-screen *) {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+html.light input::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Typography outside camera HUD and high-contrast badges */
+html.light .text-white:not(.camera-viewport-screen *):not(.bg-red-600 *):not(.bg-emerald-600 *):not(.bg-accentgold *):not(.bg-red-600):not(.bg-emerald-600):not(.bg-accentgold) {
+  color: #0f172a !important;
+}
+
+html.light .text-slate-100:not(.camera-viewport-screen *),
+html.light .text-slate-200:not(.camera-viewport-screen *) {
+  color: #1e293b !important;
+}
+
+html.light .text-slate-300:not(.camera-viewport-screen *) {
+  color: #334155 !important;
+}
+
+html.light .text-slate-400:not(.camera-viewport-screen *) {
+  color: #64748b !important;
+}
+
+html.light .text-slate-500:not(.camera-viewport-screen *) {
+  color: #94a3b8 !important;
+}
+
+/* General Borders */
+html.light .border-slate-800:not(.camera-viewport-screen *),
+html.light .border-slate-800\/80:not(.camera-viewport-screen *),
+html.light .border-slate-700:not(.camera-viewport-screen *),
+html.light .border-slate-700\/80:not(.camera-viewport-screen *) {
+  border-color: #e2e8f0 !important;
+}
+
+/* Table styles */
+html.light tr.hover\:bg-slate-900\/40:hover {
+  background-color: rgba(241, 245, 249, 0.7) !important;
+}
+
+html.light tbody.divide-slate-800\/80 > tr {
+  border-color: #e2e8f0 !important;
+}
+
+/* Interactive buttons with slate styling in dark mode */
+html.light button.bg-slate-900:not(.camera-viewport-screen *) {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #1e293b !important;
+}
+html.light button.bg-slate-900:not(.camera-viewport-screen *):hover {
+  background-color: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+}
+
+html.light button.bg-slate-800:not(.camera-viewport-screen *) {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #334155 !important;
+}
+html.light button.bg-slate-800:not(.camera-viewport-screen *):hover {
+  background-color: #e2e8f0 !important;
+}
+
+/* Camera viewport screen: stays high-tech OLED dark monitor */
+.camera-viewport-screen {
+  background-color: #080a0f !important;
+  border-color: #334155 !important;
+}
+
+/* Watermark icons behind cards */
+html.light .text-slate-800\/40 {
+  color: rgba(203, 213, 225, 0.45) !important;
+}
+
+/* Status & Tier Badges in Light Mode */
+html.light .bg-amber-500\/10,
+html.light .bg-amber-500\/20 {
+  background-color: #fffbeb !important;
+}
+html.light .border-amber-500\/20,
+html.light .border-amber-500\/30,
+html.light .border-amber-500\/40,
+html.light .border-amber-500\/50 {
+  border-color: #fde68a !important;
+}
+
+html.light .bg-blue-500\/10,
+html.light .bg-blue-500\/20 {
+  background-color: #eff6ff !important;
+}
+html.light .text-blue-400 {
+  color: #2563eb !important;
+}
+html.light .border-blue-500\/20,
+html.light .border-blue-500\/30,
+html.light .border-blue-500\/40 {
+  border-color: #bfdbfe !important;
+}
+
+html.light .bg-emerald-500\/10,
+html.light .bg-emerald-500\/20 {
+  background-color: #ecfdf5 !important;
+}
+html.light .text-emerald-400 {
+  color: #059669 !important;
+}
+html.light .border-emerald-500\/20,
+html.light .border-emerald-500\/30,
+html.light .border-emerald-500\/40 {
+  border-color: #a7f3d0 !important;
+}
+
+html.light .bg-red-500\/10,
+html.light .bg-red-500\/20 {
+  background-color: #fef2f2 !important;
+}
+html.light .text-red-400 {
+  color: #dc2626 !important;
+}
+html.light .border-red-500\/20,
+html.light .border-red-500\/30,
+html.light .border-red-500\/40 {
+  border-color: #fecaca !important;
+}
+
+/* Light mode luxury footer */
+html.light footer {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Light mode root layout text override */
+html.light .min-h-screen {
+  color: #0f172a !important;
+}
+
+/* Toast alerts styling preservation */
+.toast-card .text-slate-100 {
+  color: #f8fafc !important;
+}
+.toast-card .text-slate-300 {
+  color: #cbd5e1 !important;
+}
+.toast-card .text-white {
+  color: #ffffff !important;
+}

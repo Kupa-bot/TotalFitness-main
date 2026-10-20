@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Total Fitness | OMNI-ACCESS Biometric Management</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#111318',     /* Rich charcoal black */
+                        cardbg: '#1a1d24',     /* Subtle dark grey surface */
+                        cardhover: '#222630',  /* Hover grey */
+                        accentgold: '#d99b26', /* Refined luxury gold highlight */
+                        accentgoldhover: '#f5af30',
+                        accentdark: '#0e1015'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #111318; color: #f3f4f6; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #111318; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+        .scan-line {
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to right, transparent, #d99b26, transparent);
+            position: absolute;
+            animation: scan 2.5s infinite linear;
+        }
+        @keyframes scan {
+            0% { top: 0%; opacity: 0.8; }
+            50% { opacity: 1; }
+            100% { top: 100%; opacity: 0.8; }
+        }
+    </style>
+</head>
+<body class="bg-darkbg text-slate-100 min-h-screen flex flex-col selection:bg-accentgold selection:text-black">
+
+    <!-- TOP NAVIGATION / BRAND BAR -->
+    <header class="bg-cardbg border-b border-slate-800 sticky top-0 z-50 px-4 lg:px-8 py-3 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
+        <!-- Brand & Logo -->
+        <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
+            <div class="flex items-center gap-3">
+                <!-- Circular Total Fitness Logo Representation -->
+                <div class="w-11 h-11 rounded-full bg-gradient-to-tr from-slate-900 via-zinc-800 to-zinc-700 p-0.5 border-2 border-slate-600 shadow-xl relative flex items-center justify-center overflow-hidden group">
+                    <!-- Outer ring graphic matching logo -->
+                    <div class="absolute inset-0 rounded-full border border-slate-400/30"></div>
+                    <!-- Accent orange/gold top wedge -->
+                    <div class="absolute top-0 w-full h-1/2 bg-gradient-to-b from-[#d99b26] to-[#b87c14] rounded-t-full opacity-90"></div>
+                    <!-- Stylized letter F -->
+                    <div class="relative z-10 font-black text-white italic text-lg tracking-tighter drop-shadow">TF</div>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-bold tracking-wider text-white text-base">TOTAL FITNESS</h1>
+                        <span class="text-xs bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-semibold">OMNI-ACCESS</span>
+                    </div>
+                    <p class="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
+                        <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                        Neural Engine: <span class="text-slate-200 font-medium">99.8% Accuracy</span> | 14 Feeds Active
+                    </p>
+                </div>
+            </div>
+            <!-- Mobile Clock -->
+            <div class="md:hidden text-right">
+                <div id="mobile-clock" class="text-xs font-mono font-bold text-amber-400">00:00:00</div>
+                <div class="text-[10px] text-slate-400">Live Sync</div>
+            </div>
+        </div>
+
+        <!-- Branch Switcher & Multi-Gym Sync Indicator -->
+        <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+            <div class="relative w-full md:w-64">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-amber-400">
+                    <i class="fa-solid fa-code-branch text-xs"></i>
+                </div>
+                <select id="branch-selector" onchange="switchBranch(this.value)" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl pl-9 pr-8 py-2.5 focus:ring-2 focus:ring-amber-500 focus:outline-none appearance-none cursor-pointer">
+                    <option value="borrowdale">Branch A - Borrowdale (HQ)</option>
+                    <option value="avondale">Branch B - Avondale Club</option>
+                    <option value="cbd">Branch C - CBD Express</option>
+                </select>
+                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+                    <i class="fa-solid fa-chevron-down text-xs"></i>
+                </div>
+            </div>
+
+            <!-- Global Master Status Tag -->
+            <div class="hidden xl:flex items-center gap-2 bg-slate-900/80 border border-slate-800 px-3 py-2 rounded-xl">
+                <i class="fa-solid fa-satellite-dish text-amber-400 text-sm animate-pulse"></i>
+                <div class="text-left">
+                    <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Global Mesh Sync</div>
+                    <div class="text-xs text-amber-400 font-bold flex items-center gap-1">
+                        <span>Connected</span>
+                        <span class="text-[10px] text-slate-400 font-normal">(&lt;12ms latency)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Desktop Clock -->
+            <div class="hidden md:block bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl text-right">
+                <div id="desktop-clock" class="text-xs font-mono font-bold text-amber-400">00:00:00 CAT</div>
+                <div class="text-[10px] text-slate-400">Multi-Site Secure Link</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="flex-1 p-4 lg:p-6 max-w-[1600px] w-full mx-auto flex flex-col gap-6">
+
+        <!-- METRICS BAR -->
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <!-- Metric 1 -->
+            <div class="bg-cardbg border border-slate-800/80 rounded-2xl p-4 relative overflow-hidden group hover:border-slate-700 transition-all">
+                <div class="absolute -right-4 -bottom-4 text-slate-800/40 text-6xl group-hover:text-amber-500/5 transition-colors pointer-events-none">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Active Members</span>
+                    <span class="text-xs bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full font-medium">Live Count</span>
+                </div>
+                <div class="mt-2 flex items-baseline gap-2">
+                    <span id="metric-total-members" class="text-2xl lg:text-3xl font-bold text-white">4,820</span>
+                    <span class="text-xs text-amber-400 font-medium">+34 today</span>
+                </div>
+                <div class="mt-2 text-[11px] text-slate-400 flex items-center gap-1">
+                    <i class="fa-solid fa-arrow-trend-up text-amber-400"></i> Across all 3 branches
+                </div>
+            </div>
+
+            <!-- Metric 2 -->
+            <div class="bg-cardbg border border-slate-800/80 rounded-2xl p-4 relative overflow-hidden group hover:border-slate-700 transition-all">
+                <div class="absolute -right-4 -bottom-4 text-slate-800/40 text-6xl group-hover:text-amber-500/5 transition-colors pointer-events-none">
+                    <i class="fa-solid fa-crown"></i>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold">VIP Passholders</span>
+                    <span class="text-xs bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full font-medium">Omni Privileged</span>
+                </div>
+                <div class="mt-2 flex items-baseline gap-2">
+                    <span id="metric-vip-count" class="text-2xl lg:text-3xl font-bold text-amber-400">642</span>
+                    <span class="text-xs text-amber-400 font-medium">100% Biometric Ready</span>
+                </div>
+                <div class="mt-2 text-[11px] text-slate-400 flex items-center gap-1">
+                    <i class="fa-solid fa-bolt text-amber-400"></i> Access Lounge, Baths & Canteen
+                </div>
+            </div>
+
+            <!-- Metric 3 -->
+            <div class="bg-cardbg border border-slate-800/80 rounded-2xl p-4 relative overflow-hidden group hover:border-slate-700 transition-all">
+                <div class="absolute -right-4 -bottom-4 text-slate-800/40 text-6xl group-hover:text-amber-500/5 transition-colors pointer-events-none">
+                    <i class="fa-solid fa-id-card-clip"></i>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Access Events (1 Hr)</span>
+                    <span class="text-xs bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full font-medium">Real-Time</span>
+                </div>
+                <div class="mt-2 flex items-baseline gap-2">
+                    <span id="metric-access-events" class="text-2xl lg:text-3xl font-bold text-white">1,284</span>
+                    <span class="text-xs text-amber-400 font-medium">99.9% Pass Rate</span>
+                </div>
+                <div class="mt-2 text-[11px] text-slate-400 flex items-center gap-1">
+                    <i class="fa-solid fa-clock-rotate-left text-amber-400"></i> Avg scan speed: 0.28s
+                </div>
+            </div>
+
+            <!-- Metric 4 -->
+            <div class="bg-cardbg border border-slate-800/80 rounded-2xl p-4 relative overflow-hidden group hover:border-slate-700 transition-all">
+                <div class="absolute -right-4 -bottom-4 text-slate-800/40 text-6xl group-hover:text-amber-500/5 transition-colors pointer-events-none">
+                    <i class="fa-solid fa-network-wired"></i>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Node Status</span>
+                    <span class="text-xs bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full font-medium">Synchronized</span>
+                </div>
+                <div class="mt-2 flex items-baseline gap-2">
+                    <span class="text-2xl lg:text-3xl font-bold text-amber-400">3 / 3</span>
+                    <span class="text-xs text-amber-400 font-medium">Branches Online</span>
+                </div>
+                <div class="mt-2 text-[11px] text-slate-400 flex items-center gap-1">
+                    <i class="fa-solid fa-shield-halved text-amber-400"></i> Edge biometric caching active
+                </div>
+            </div>
+        </section>
+
+        <!-- MAIN DASHBOARD SPLIT GRID -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- LEFT COLUMN: Live Facial Recognition Stream & Gate Simulation (7 Cols) -->
+            <div class="lg:col-span-7 flex flex-col gap-6">
+                
+                <!-- Live Facial Feed Box -->
+                <div class="bg-cardbg border border-slate-800 rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden shadow-2xl">
+                    
+                    <!-- Card Header & Zone Selector -->
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-3 h-3 rounded-full bg-amber-500 animate-ping"></div>
+                            <h2 class="font-bold text-white text-base tracking-wide flex items-center gap-2">
+                                <i class="fa-solid fa-camera text-amber-400"></i> Live Biometric Gate Stream
+                            </h2>
+                        </div>
+                        <!-- Zone Tabs -->
+                        <div class="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 overflow-x-auto max-w-full">
+                            <button onclick="switchZone('turnstile')" id="btn-zone-turnstile" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-500 text-black transition-all whitespace-nowrap shadow">Gym Floor</button>
+                            <button onclick="switchZone('vip')" id="btn-zone-vip" class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-all whitespace-nowrap">VIP Lounge</button>
+                            <button onclick="switchZone('baths')" id="btn-zone-baths" class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-all whitespace-nowrap">Sauna / Baths</button>
+                            <button onclick="switchZone('canteen')" id="btn-zone-canteen" class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-all whitespace-nowrap">Canteen Kiosk</button>
+                            <button onclick="switchZone('carwash')" id="btn-zone-carwash" class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-all whitespace-nowrap">Carwash Bay</button>
+                        </div>
+                    </div>
+
+                    <!-- Simulated Camera Viewport using HTML5 Canvas -->
+                    <div id="camera-viewport" class="relative w-full h-80 lg:h-96 bg-black rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center">
+                        
+                        <!-- Canvas Element for Neural Mesh / Scan Animation -->
+                        <canvas id="biometric-canvas" class="absolute inset-0 w-full h-full block cursor-pointer"></canvas>
+
+                        <!-- Scanline Effect -->
+                        <div class="scan-line pointer-events-none"></div>
+
+                        <!-- Simulated Camera Subject Graphic & Bounding Box Overlay -->
+                        <div id="camera-subject-container" class="relative z-10 flex flex-col items-center justify-center pointer-events-none">
+                            <!-- Bounding Box -->
+                            <div id="bounding-box" class="w-52 h-64 border-2 border-amber-500 rounded-2xl relative shadow-[0_0_25px_rgba(217,155,38,0.3)] bg-amber-500/5 flex flex-col justify-between p-3">
+                                <!-- Corner Brackets -->
+                                <div class="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-amber-300"></div>
+                                <div class="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-amber-300"></div>
+                                <div class="absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-amber-300"></div>
+                                <div class="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-amber-300"></div>
+
+                                <!-- Top Tag Inside Box -->
+                                <div class="flex justify-between items-center text-[10px] font-mono text-amber-300 bg-black/70 px-2 py-0.5 rounded border border-amber-500/40">
+                                    <span id="cam-tag-id">ID: #TF-8824</span>
+                                    <span id="cam-tag-conf" class="text-amber-400 font-bold">99.7%</span>
+                                </div>
+
+                                <!-- Center Avatar / Icon representation -->
+                                <div class="flex flex-col items-center justify-center my-auto">
+                                    <div id="cam-avatar-icon" class="w-16 h-16 rounded-full bg-amber-500/20 border border-amber-500/50 flex items-center justify-center text-amber-400 text-2xl mb-2 shadow-lg">
+                                        <i class="fa-solid fa-user-check"></i>
+                                    </div>
+                                    <div id="cam-member-name" class="font-bold text-white text-sm text-center tracking-wide">Tarie Mafusire</div>
+                                    <div id="cam-member-tier" class="text-[11px] uppercase tracking-wider font-semibold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full mt-1 border border-amber-500/30">VIP Omni Pass</div>
+                                </div>
+
+                                <!-- Bottom Status Inside Box -->
+                                <div id="cam-status-badge" class="text-center font-bold text-xs py-1 rounded bg-amber-500 text-black shadow">
+                                    ACCESS GRANTED
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Camera HUD Info Overlays -->
+                        <div class="absolute top-3 left-3 z-20 flex flex-col gap-1 pointer-events-none">
+                            <span class="text-[11px] font-mono bg-black/80 text-slate-300 px-2.5 py-1 rounded border border-slate-800 flex items-center gap-1.5 shadow">
+                                <i class="fa-solid fa-video text-amber-400"></i> CAM-04: <span id="current-zone-label" class="text-white font-semibold">Main Turnstile (Gym Floor)</span>
+                            </span>
+                            <span class="text-[10px] font-mono bg-black/80 text-slate-400 px-2.5 py-0.5 rounded border border-slate-800 shadow">
+                                FPS: 60.0 | Latency: 12ms | Canvas 2D Mesh Active
+                            </span>
+                        </div>
+
+                        <div class="absolute bottom-3 right-3 z-20">
+                            <button onclick="triggerNextScanSimulation()" class="bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold px-3.5 py-2 rounded-xl shadow-lg flex items-center gap-1.5 transition-all">
+                                <i class="fa-solid fa-rotate"></i> Next Scan Test
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Live Event Feed Ticker -->
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center justify-between text-xs text-slate-400 font-semibold px-1">
+                            <span>Recent Biometric Access Logs</span>
+                            <span class="text-amber-400 flex items-center gap-1"><i class="fa-solid fa-bolt"></i> Live Feed</span>
+                        </div>
+                        <div id="access-log-list" class="flex flex-col gap-2 max-h-40 overflow-y-auto pr-1">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: Access Control Matrix & Branch Sync & Quick Actions (5 Cols) -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+
+                <!-- Interactive Zone Permission Matrix Simulator -->
+                <div class="bg-cardbg border border-slate-800 rounded-2xl p-5 flex flex-col gap-4 shadow-xl">
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-bold text-white text-base tracking-wide flex items-center gap-2">
+                            <i class="fa-solid fa-shield-keyhole text-amber-400"></i> Zone Permission Matrix
+                        </h2>
+                        <span class="text-xs bg-slate-900 border border-slate-700 px-2.5 py-1 rounded-lg text-slate-300">
+                            Live Tier Comparison
+                        </span>
+                    </div>
+
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        Test how biometric privileges behave across member tiers. VIP members get instant access across all branches and zones, while standard members have controlled boundaries.
+                    </p>
+
+                    <!-- Member Selector Tabs for Matrix -->
+                    <div class="grid grid-cols-2 gap-2 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
+                        <button onclick="selectMatrixProfile('vip')" id="tab-profile-vip" class="py-2 px-3 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center gap-2 transition-all">
+                            <i class="fa-solid fa-crown text-amber-400"></i> VIP Tier (Tarie M.)
+                        </button>
+                        <button onclick="selectMatrixProfile('regular')" id="tab-profile-regular" class="py-2 px-3 rounded-lg text-xs font-bold text-slate-400 hover:text-white flex items-center justify-center gap-2 transition-all">
+                            <i class="fa-solid fa-user text-slate-400"></i> Standard (John D.)
+                        </button>
+                    </div>
+
+                    <!-- Permission Matrix Table -->
+                    <div class="flex flex-col gap-2 mt-1">
+                        <div class="text-[11px] font-semibold text-slate-400 px-1 uppercase tracking-wider">Facility Access Rights</div>
+                        
+                        <div class="space-y-2">
+                            <!-- Row 1 -->
+                            <div class="flex items-center justify-between bg-slate-900/80 border border-slate-800/80 p-3 rounded-xl">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400">
+                                        <i class="fa-solid fa-dumbbell text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-bold text-white">Gym Floor & Turnstiles</div>
+                                        <div class="text-[10px] text-slate-400">All training equipment & zones</div>
+                                    </div>
+                                </div>
+                                <span id="perm-gym" class="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-check"></i> GRANTED
+                                </span>
+                            </div>
+
+                            <!-- Row 2 -->
+                            <div class="flex items-center justify-between bg-slate-900/80 border border-slate-800/80 p-3 rounded-xl">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400">
+                                        <i class="fa-solid fa-champagne-glasses text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-bold text-white">VIP Lounge Service</div>
+                                        <div class="text-[10px] text-slate-400">Private seating, barista & recovery bar</div>
+                                    </div>
+                                </div>
+                                <span id="perm-lounge" class="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-check"></i> GRANTED
+                                </span>
+                            </div>
+
+                            <!-- Row 3 -->
+                            <div class="flex items-center justify-between bg-slate-900/80 border border-slate-800/80 p-3 rounded-xl">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400">
+                                        <i class="fa-solid fa-hot-tub-person text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-bold text-white">Access-Controlled Baths</div>
+                                        <div class="text-[10px] text-slate-400">Sauna, steam room & cold plunge</div>
+                                    </div>
+                                </div>
+                                <span id="perm-baths" class="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-check"></i> GRANTED
+                                </span>
+                            </div>
+
+                            <!-- Row 4 -->
+                            <div class="flex items-center justify-between bg-slate-900/80 border border-slate-800/80 p-3 rounded-xl">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400">
+                                        <i class="fa-solid fa-utensils text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-bold text-white">Canteen Tokenized Kiosk</div>
+                                        <div class="text-[10px] text-slate-400">Facial protein shake & meal charging</div>
+                                    </div>
+                                </div>
+                                <span id="perm-canteen" class="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-check"></i> VIP TOKEN
+                                </span>
+                            </div>
+
+                            <!-- Row 5 -->
+                            <div class="flex items-center justify-between bg-slate-900/80 border border-slate-800/80 p-3 rounded-xl">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400">
+                                        <i class="fa-solid fa-car text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-bold text-white">Carwash Express Bay</div>
+                                        <div class="text-[10px] text-slate-400">Complimentary VIP valet & wash</div>
+                                    </div>
+                                </div>
+                                <span id="perm-carwash" class="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-check"></i> INCLUDED
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Multi-Branch Edge Sync Node Status -->
+                <div class="bg-cardbg border border-slate-800 rounded-2xl p-5 flex flex-col gap-4 shadow-xl">
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-bold text-white text-base tracking-wide flex items-center gap-2">
+                            <i class="fa-solid fa-network-wired text-amber-400"></i> Multi-Branch Edge Sync Hub
+                        </h2>
+                        <span class="text-xs bg-amber-500/10 text-amber-400 font-semibold px-2 py-0.5 rounded-full border border-amber-500/20">
+                            Active Mesh
+                        </span>
+                    </div>
+
+                    <p class="text-xs text-slate-400">
+                        Biometric templates registered at any branch propagate instantly across all locations, allowing VIPs seamless multi-gym access.
+                    </p>
+
+                    <!-- Branch Nodes List -->
+                    <div class="grid grid-cols-1 gap-2.5">
+                        <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-xs border border-amber-500/30">
+                                    HQ
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-white">Branch A - Borrowdale</div>
+                                    <div class="text-[10px] text-slate-400">Master DB Node | 4 Cams Active</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">Synced 0s ago</span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#d99b26]"></span>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-slate-800 text-slate-300 flex items-center justify-center font-bold text-xs border border-slate-700">
+                                    B2
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-white">Branch B - Avondale Club</div>
+                                    <div class="text-[10px] text-slate-400">Edge Server Node | 5 Cams Active</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">Synced 2s ago</span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#d99b26]"></span>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-slate-800 text-slate-300 flex items-center justify-center font-bold text-xs border border-slate-700">
+                                    B3
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-white">Branch C - CBD Express</div>
+                                    <div class="text-[10px] text-slate-400">Edge Server Node | 5 Cams Active</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">Synced 1s ago</span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#d99b26]"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Admin Control Bar -->
+                    <div class="grid grid-cols-2 gap-2 pt-2">
+                        <button onclick="openRegisterModal()" class="bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold py-2.5 px-3 rounded-xl transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-user-plus"></i> Register Member
+                        </button>
+                        <button onclick="triggerEmergencyOverride()" class="bg-slate-800 hover:bg-slate-700 text-red-400 border border-red-500/30 text-xs font-bold py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Override Gate
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-cardbg border-t border-slate-800 py-4 px-6 text-center text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div>Total Fitness OMNI-ACCESS Biometric Suite &copy; 2026. All rights reserved.</div>
+        <div class="flex items-center gap-4">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-shield text-amber-400"></i> GDPR & POPIA Compliant</span>
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-server text-slate-400"></i> Edge Security v4.2</span>
+        </div>
+    </footer>
+
+    <!-- REGISTER MEMBER MODAL (Hidden by default) -->
+    <div id="register-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-cardbg border border-slate-800 rounded-2xl max-w-md w-full p-6 flex flex-col gap-4 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+            <div class="flex items-center justify-between">
+                <h3 class="font-bold text-white text-base flex items-center gap-2">
+                    <i class="fa-solid fa-fingerprint text-amber-400"></i> New Biometric Enrollment
+                </h3>
+                <button onclick="closeRegisterModal()" class="text-slate-400 hover:text-white text-sm">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-400">
+                Capture facial embeddings and assign membership tier across all Total Fitness branches instantly.
+            </p>
+            <div class="space-y-3 pt-2">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1">Full Name</label>
+                    <input type="text" id="reg-name" placeholder="e.g. Tendai Moyo" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1">Membership Tier</label>
+                    <select id="reg-tier" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+                        <option value="vip">VIP Omni Pass (All Branches + Lounge + Baths + Carwash)</option>
+                        <option value="standard">Standard Member (Gym Floor Only)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1">Home Branch</label>
+                    <select id="reg-branch" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+                        <option value="Borrowdale">Branch A - Borrowdale</option>
+                        <option value="Avondale">Branch B - Avondale</option>
+                        <option value="CBD">Branch C - CBD</option>
+                    </select>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex flex-col items-center justify-center gap-2">
+                    <div class="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                        <i class="fa-solid fa-camera-rotate animate-pulse"></i>
+                    </div>
+                    <span class="text-[11px] text-slate-300 font-medium">Position face in frame for 3D mesh capture</span>
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-2">
+                <button onclick="closeRegisterModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-all">Cancel</button>
+                <button onclick="submitNewMember()" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold rounded-xl transition-all shadow-lg shadow-amber-500/20">Complete Enrollment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // Live Clocks
+        function updateClocks() {
+            const now = new Date();
+            const timeStr = now.toTimeString().split(' ')[0] + ' CAT';
+            document.getElementById('mobile-clock').innerText = timeStr;
+            document.getElementById('desktop-clock').innerText = timeStr;
+        }
+        setInterval(updateClocks, 1000);
+        updateClocks();
+
+        // Canvas Biometric Neural Mesh Animation Setup
+        const canvas = document.getElementById('biometric-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            width = container.clientWidth;
+            height = container.clientHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Generate particle mesh nodes
+        const particles = [];
+        for (let i = 0; i < 45; i++) {
+            particles.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                vx: (Math.random() - 0.5) * 0.8,
+                vy: (Math.random() - 0.5) * 0.8,
+                radius: Math.random() * 2 + 1
+            });
+        }
+
+        function animateCanvas() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw dark futuristic background grid
+            ctx.strokeStyle = '#1e2330';
+            ctx.lineWidth = 1;
+            const step = 30;
+            for (let x = 0; x < width; x += step) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < height; y += step) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+
+            // Update and draw particles / neural mesh connections
+            ctx.fillStyle = '#d99b26';
+            ctx.strokeStyle = 'rgba(217, 155, 38, 0.2)';
+
+            for (let i = 0; i < particles.length; i++) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0 || p.x > width) p.vx *= -1;
+                if (p.y < 0 || p.y > height) p.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                for (let j = i + 1; j < particles.length; j++) {
+                    let p2 = particles[j];
+                    let dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+                    if (dist < 90) {
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            requestAnimationFrame(animateCanvas);
+        }
+        animateCanvas();
+
+        // Simulated Access Log Database
+        const sampleLogs = [
+            { id: "#TF-8824", name: "Tarie Mafusire", tier: "VIP", zone: "VIP Lounge", branch: "Borrowdale HQ", status: "GRANTED", time: "Just now", icon: "fa-champagne-glasses" },
+            { id: "#TF-4091", name: "John Doe", tier: "STANDARD", zone: "Gym Floor", branch: "Avondale Club", status: "GRANTED", time: "1 min ago", icon: "fa-dumbbell" },
+            { id: "#TF-3109", name: "Samantha Moyo", tier: "VIP", zone: "Sauna & Baths", branch: "CBD Express", status: "GRANTED", time: "3 mins ago", icon: "fa-hot-tub-person" },
+            { id: "#TF-9012", name: "Michael Chen", tier: "STANDARD", zone: "VIP Lounge", branch: "Borrowdale HQ", status: "DENIED", time: "4 mins ago", icon: "fa-triangle-exclamation" },
+            { id: "#TF-5521", name: "Rumbidzai Ncube", tier: "VIP", zone: "Carwash Express", branch: "Avondale Club", status: "GRANTED", time: "6 mins ago", icon: "fa-car" }
+        ];
+
+        function renderLogs() {
+            const container = document.getElementById('access-log-list');
+            container.innerHTML = '';
+            sampleLogs.forEach(log => {
+                const isGranted = log.status === 'GRANTED';
+                const statusBg = isGranted ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30';
+                const html = `
+                    <div class="bg-slate-900 border border-slate-800/80 p-2.5 rounded-xl flex items-center justify-between text-xs">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-7 h-7 rounded-lg ${isGranted ? 'bg-amber-500/10 text-amber-400' : 'bg-red-500/10 text-red-400'} flex items-center justify-center">
+                                <i class="fa-solid ${log.icon}"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-white flex items-center gap-1.5">
+                                    <span>${log.name}</span>
+                                    <span class="text-[10px] font-mono text-slate-400">(${log.id})</span>
+                                </div>
+                                <div class="text-[10px] text-slate-400">${log.zone} &bull; ${log.branch}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] text-slate-400 font-mono">${log.time}</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${statusBg}">${log.status}</span>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        }
+        renderLogs();
+
+        // Zone Switching State
+        let currentZone = 'turnstile';
+        const zonesData = {
+            turnstile: { label: "Main Turnstile (Gym Floor)", name: "Tarie Mafusire", id: "#TF-8824", tier: "VIP Omni Pass", conf: "99.8%", status: "ACCESS GRANTED", icon: "fa-user-check", tierClass: "text-amber-400 bg-amber-500/10 border-amber-500/30", boxColor: "border-amber-500 bg-amber-500/5", badgeColor: "bg-amber-500 text-black" },
+            vip: { label: "VIP Lounge Entry", name: "Tarie Mafusire", id: "#TF-8824", tier: "VIP Omni Pass", conf: "99.4%", status: "ACCESS GRANTED", icon: "fa-crown", tierClass: "text-amber-400 bg-amber-500/10 border-amber-500/30", boxColor: "border-amber-500 bg-amber-500/5", badgeColor: "bg-amber-500 text-black" },
+            baths: { label: "Access-Controlled Baths & Sauna", name: "Samantha Moyo", id: "#TF-3109", tier: "VIP Omni Pass", conf: "99.6%", status: "ACCESS GRANTED", icon: "fa-hot-tub-person", tierClass: "text-amber-400 bg-amber-500/10 border-amber-500/30", boxColor: "border-amber-500 bg-amber-500/5", badgeColor: "bg-amber-500 text-black" },
+            canteen: { label: "Smart Canteen Token Kiosk", name: "Tarie Mafusire", id: "#TF-8824", tier: "VIP Token Account", conf: "99.9%", status: "TOKEN CHARGED ($8.50)", icon: "fa-utensils", tierClass: "text-amber-400 bg-amber-500/10 border-amber-500/30", boxColor: "border-amber-500 bg-amber-500/5", badgeColor: "bg-amber-500 text-black" },
+            carwash: { label: "Carwash Express Bay", name: "Rumbidzai Ncube", id: "#TF-5521", tier: "VIP Complimentary", conf: "99.5%", status: "BAY 2 OPENED", icon: "fa-car", tierClass: "text-amber-400 bg-amber-500/10 border-amber-500/30", boxColor: "border-amber-500 bg-amber-500/5", badgeColor: "bg-amber-500 text-black" }
+        };
+
+        function switchZone(zoneKey) {
+            currentZone = zoneKey;
+            // Update buttons
+            ['turnstile', 'vip', 'baths', 'canteen', 'carwash'].forEach(z => {
+                const btn = document.getElementById(`btn-zone-${z}`);
+                if (z === zoneKey) {
+                    btn.className = "px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-500 text-black transition-all whitespace-nowrap shadow";
+                } else {
+                    btn.className = "px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-all whitespace-nowrap";
+                }
+            });
+
+            // Update camera feed metadata
+            const data = zonesData[zoneKey];
+            document.getElementById('current-zone-label').innerText = data.label;
+            document.getElementById('cam-tag-id').innerText = `ID: ${data.id}`;
+            document.getElementById('cam-tag-conf').innerText = data.conf;
+            document.getElementById('cam-member-name').innerText = data.name;
+            document.getElementById('cam-member-tier').innerText = data.tier;
+            document.getElementById('cam-member-tier').className = `text-[11px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full mt-1 border ${data.tierClass}`;
+            document.getElementById('cam-avatar-icon').innerHTML = `<i class="fa-solid ${data.icon}"></i>`;
+            
+            const badge = document.getElementById('cam-status-badge');
+            badge.innerText = data.status;
+            badge.className = `text-center font-bold text-xs py-1 rounded shadow ${data.badgeColor}`;
+            
+            const box = document.getElementById('bounding-box');
+            box.className = `w-52 h-64 border-2 rounded-2xl relative shadow-lg flex flex-col justify-between p-3 transition-all duration-300 ${data.boxColor}`;
+        }
+
+        // Cycle next scan simulation
+        const randomScans = [
+            { name: "Tarie Mafusire", id: "#TF-8824", tier: "VIP Omni Pass", tierClass: "text-amber-400 bg-amber-500/10 border-amber-500/30", status: "ACCESS GRANTED", icon: "fa-crown", boxColor: "border-amber-500 bg-amber-500/5", badgeColor: "bg-amber-500 text-black", zone: "VIP Lounge" },
+            { name: "John Doe", id: "#TF-4091", tier: "Standard Tier", tierClass: "text-slate-400 bg-slate-800 border-slate-700", status: "ACCESS GRANTED (Gym)", icon: "fa-dumbbell", boxColor: "border-amber-500 bg-amber-500/5", badgeColor: "bg-amber-500 text-black", zone: "Gym Floor" },
+            { name: "Michael Chen", id: "#TF-9012", tier: "Standard Tier", tierClass: "text-slate-400 bg-slate-800 border-slate-700", status: "ACCESS DENIED (VIP Zone)", icon: "fa-triangle-exclamation", boxColor: "border-red-500 bg-red-500/5", badgeColor: "bg-red-500 text-white", zone: "VIP Lounge" }
+        ];
+
+        function triggerNextScanSimulation() {
+            const scan = randomScans[Math.floor(Math.random() * randomScans.length)];
+            document.getElementById('cam-tag-id').innerText = `ID: ${scan.id}`;
+            document.getElementById('cam-tag-conf').innerText = (99 + Math.random() * 0.9).toFixed(1) + '%';
+            document.getElementById('cam-member-name').innerText = scan.name;
+            document.getElementById('cam-member-tier').innerText = scan.tier;
+            document.getElementById('cam-member-tier').className = `text-[11px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full mt-1 border ${scan.tierClass}`;
+            document.getElementById('cam-avatar-icon').innerHTML = `<i class="fa-solid ${scan.icon}"></i>`;
+            
+            const badge = document.getElementById('cam-status-badge');
+            badge.innerText = scan.status;
+            badge.className = `text-center font-bold text-xs py-1 rounded shadow ${scan.badgeColor}`;
+            
+            const box = document.getElementById('bounding-box');
+            box.className = `w-52 h-64 border-2 rounded-2xl relative shadow-lg flex flex-col justify-between p-3 transition-all duration-300 ${scan.boxColor}`;
+
+            showToast(`Biometric Scan: ${scan.name} at ${scan.zone} - ${scan.status}`);
+        }
+
+        // Matrix Profile Selector (VIP vs Regular)
+        function selectMatrixProfile(type) {
+            const btnVip = document.getElementById('tab-profile-vip');
+            const btnReg = document.getElementById('tab-profile-regular');
+            
+            const permGym = document.getElementById('perm-gym');
+            const permLounge = document.getElementById('perm-lounge');
+            const permBaths = document.getElementById('perm-baths');
+            const permCanteen = document.getElementById('perm-canteen');
+            const permCarwash = document.getElementById('perm-carwash');
+
+            if (type === 'vip') {
+                btnVip.className = "py-2 px-3 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center gap-2 transition-all";
+                btnReg.className = "py-2 px-3 rounded-lg text-xs font-bold text-slate-400 hover:text-white flex items-center justify-center gap-2 transition-all";
+                
+                permGym.className = "text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1.5";
+                permGym.innerHTML = `<i class="fa-solid fa-check"></i> GRANTED`;
+
+                permLounge.className = "text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1.5";
+                permLounge.innerHTML = `<i class="fa-solid fa-check"></i> GRANTED`;
+
+                permBaths.className = "text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1.5";
+                permBaths.innerHTML = `<i class="fa-solid fa-check"></i> GRANTED`;
+
+                permCanteen.className = "text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1.5";
+                permCanteen.innerHTML = `<i class="fa-solid fa-check"></i> VIP TOKEN`;
+
+                permCarwash.className = "text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1.5";
+                permCarwash.innerHTML = `<i class="fa-solid fa-check"></i> INCLUDED`;
+                
+                showToast("Switched Profile: Tarie Mafusire (VIP Omni Tier)");
+            } else {
+                btnReg.className = "py-2 px-3 rounded-lg text-xs font-bold bg-slate-800 text-slate-200 border border-slate-700 flex items-center justify-center gap-2 transition-all";
+                btnVip.className = "py-2 px-3 rounded-lg text-xs font-bold text-slate-400 hover:text-white flex items-center justify-center gap-2 transition-all";
+                
+                permGym.className = "text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1.5";
+                permGym.innerHTML = `<i class="fa-solid fa-check"></i> GRANTED`;
+
+                permLounge.className = "text-xs font-bold px-2.5 py-1 rounded-lg bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-1.5";
+                permLounge.innerHTML = `<i class="fa-solid fa-ban"></i> DENIED`;
+
+                permBaths.className = "text-xs font-bold px-2.5 py-1 rounded-lg bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-1.5";
+                permBaths.innerHTML = `<i class="fa-solid fa-ban"></i> DENIED`;
+
+                permCanteen.className = "text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 flex items-center gap-1.5";
+                permCanteen.innerHTML = `<i class="fa-solid fa-wallet"></i> CASH/CARD`;
+
+                permCarwash.className = "text-xs font-bold px-2.5 py-1 rounded-lg bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-1.5";
+                permCarwash.innerHTML = `<i class="fa-solid fa-ban"></i> NOT ELIGIBLE`;
+
+                showToast("Switched Profile: John Doe (Standard Tier)");
+            }
+        }
+
+        // Branch Switching Notification
+        function switchBranch(branchName) {
+            const branchTitles = {
+                borrowdale: "Branch A - Borrowdale (HQ)",
+                avondale: "Branch B - Avondale Club",
+                cbd: "Branch C - CBD Express"
+            };
+            showToast(`Switched active management node to ${branchTitles[branchName]}`);
+        }
+
+        // Modal Controls
+        function openRegisterModal() {
+            document.getElementById('register-modal').classList.remove('hidden');
+            document.getElementById('register-modal').classList.add('flex');
+        }
+
+        function closeRegisterModal() {
+            document.getElementById('register-modal').classList.remove('flex');
+            document.getElementById('register-modal').classList.add('hidden');
+        }
+
+        function submitNewMember() {
+            const name = document.getElementById('reg-name').value || "New Member";
+            const tier = document.getElementById('reg-tier').value;
+            const branch = document.getElementById('reg-branch').value;
+            
+            closeRegisterModal();
+            showToast(`Successfully enrolled ${name} (${tier.toUpperCase()}) across all branches!`);
+            
+            // Add to sample logs
+            sampleLogs.unshift({
+                id: "#TF-" + Math.floor(1000 + Math.random() * 9000),
+                name: name,
+                tier: tier.toUpperCase(),
+                zone: "Enrollment Kiosk",
+                branch: `Branch ${branch}`,
+                status: "GRANTED",
+                time: "Just now",
+                icon: "fa-user-plus"
+            });
+            renderLogs();
+        }
+
+        function triggerEmergencyOverride() {
+            showToast("⚠️ EMERGENCY OVERRIDE ACTIVATED: All turnstiles unlocked across all branches!");
+        }
+
+        // Toast Notification System
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = "bg-slate-900 border border-amber-500/40 text-white text-xs px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-5 duration-300 pointer-events-auto";
+            toast.innerHTML = `
+                <div class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-shield-halved text-xs"></i>
+                </div>
+                <div>${message}</div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
