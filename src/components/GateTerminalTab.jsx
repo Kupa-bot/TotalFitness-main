@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useFitness } from '../context/FitnessContext';
 import { sound } from '../utils/audio';
+import { loadFaceModels, detectFaceDescriptor, findBestMatch } from '../utils/face';
+import * as faceapi from '@vladmandic/face-api';
 import { 
   Camera, 
   RotateCw, 
@@ -36,10 +38,17 @@ export default function GateTerminalTab() {
     emergencyOverride,
     soundMuted,
     toggleSound,
-    showToast
+    showToast,
+    updateMemberFaceDescriptor
   } = useFitness();
 
   const canvasRef = useRef(null);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const scanningRef = useRef(false);
+  const membersRef = useRef(members);
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState(null);
 
   // Current detected subject state in the HUD
   const [currentScan, setCurrentScan] = useState(() => {
@@ -155,6 +164,81 @@ export default function GateTerminalTab() {
     };
   }, []);
 
+  useEffect(() => {
+    membersRef.current = members;
+  }, [members]);
+
+  // Load models, enroll existing member avatars, start camera
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        await loadFaceModels();
+        // Enroll avatars for members without a stored face descriptor
+        for (const m of members) {
+          if (!mounted) break;
+          if (Array.isArray(m.faceDescriptor) && m.faceDescriptor.length) continue;
+          if (!m.avatar) continue;
+          try {
+            const img = await faceapi.fetchImage(m.avatar);
+            const desc = await detectFaceDescriptor(img);
+            if (desc) updateMemberFaceDescriptor(m.id, desc);
+          } catch { 
+            // ignore CORS / detection failures
+          }
+        }
+        if (!mounted) return;
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 }, audio: false });
+        if (!mounted) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+        }
+        setCameraActive(true);
+      } catch (err) {
+        setCameraError(err?.message || 'Camera unavailable');
+      }
+    })();
+    return () => {
+      mounted = false;
+      if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    };
+  }, []);
+
+  // Continuous recognition loop
+  useEffect(() => {
+    if (!cameraActive) return;
+    let cancelled = false;
+    const interval = setInterval(async () => {
+      if (cancelled || scanningRef.current || !videoRef.current) return;
+      try {
+        const descriptor = await detectFaceDescriptor(videoRef.current);
+        if (cancelled || !descriptor) return;
+        const match = findBestMatch(descriptor, membersRef.current);
+        scanningRef.current = true;
+        if (match) {
+          executeScan(match.member, activeZoneId, match.confidence);
+        } else {
+          executeScan(null, activeZoneId, (60 + Math.random() * 15).toFixed(1));
+        }
+        setTimeout(() => {
+          scanningRef.current = false;
+        }, 1500);
+      } catch { 
+        scanningRef.current = false;
+      }
+    }, 1200);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [cameraActive, activeZoneId]);
+
   // Determine access decision based on member tier and current active zone policy
   const evaluateAccess = (member, zoneId) => {
     if (emergencyOverride) {
@@ -195,12 +279,16 @@ export default function GateTerminalTab() {
   };
 
   // Perform a simulated scan for a chosen member
-  const executeScan = (member, customZoneId = activeZoneId) => {
+  const executeScan = (member, customZoneId = activeZoneId, confidenceOverride = null) => {
     setIsScanning(true);
     sound.playScan();
 
     const latencyNum = (0.12 + Math.random() * 0.14).toFixed(2);
-    const confidenceNum = member ? (99.2 + Math.random() * 0.7).toFixed(1) : (68.4 + Math.random() * 10).toFixed(1);
+    const confidenceNum = confidenceOverride
+      ? confidenceOverride
+      : member
+      ? (99.2 + Math.random() * 0.7).toFixed(1)
+      : (68.4 + Math.random() * 10).toFixed(1);
 
     setTimeout(() => {
       const evaluation = evaluateAccess(member, customZoneId);
@@ -333,8 +421,15 @@ export default function GateTerminalTab() {
             {/* Viewport Frame */}
             <div className="camera-viewport-screen relative w-full h-[360px] md:h-[420px] bg-slate-950 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center select-none shadow-inner">
               
+              {/* Live Camera Feed */}
+              <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover scale-x-[-1]" muted playsInline />
+              {cameraError && (
+                <div className="absolute inset-0 flex items-center justify-center text-xs text-red-400 bg-black/70 z-10">
+                  {cameraError}
+                </div>
+              )}
               {/* Canvas 2D Particle Neural Mesh */}
-              <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block" />
+              <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block pointer-events-none opacity-40" />
 
               {/* Laser Scanline */}
               <div className="scan-line pointer-events-none" />

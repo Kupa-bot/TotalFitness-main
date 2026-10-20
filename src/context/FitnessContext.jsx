@@ -187,7 +187,8 @@ export function FitnessProvider({ children }) {
       lastVisit: 'Just Enrolled',
       biometricQuality: 99.4,
       avatar: memberData.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-      visitsThisMonth: 1
+      visitsThisMonth: 1,
+      faceDescriptor: memberData.faceDescriptor || null
     };
 
     setMembers((prev) => [newMember, ...prev]);
@@ -238,6 +239,12 @@ export function FitnessProvider({ children }) {
     const mem = members.find((m) => m.id === memberId);
     setMembers((prev) => prev.filter((m) => m.id !== memberId));
     showToast('Member Removed', `${mem?.name || 'Member'} biometric template purged from all nodes`, 'info');
+  };
+
+  const updateMemberFaceDescriptor = (memberId, descriptor) => {
+    setMembers((prev) =>
+      prev.map((m) => (m.id === memberId ? { ...m, faceDescriptor: descriptor ? Array.from(descriptor) : null } : m))
+    );
   };
 
   const topUpBalance = (memberId, amount) => {
@@ -419,6 +426,7 @@ export function FitnessProvider({ children }) {
         registerMember,
         toggleMemberStatus,
         deleteMember,
+        updateMemberFaceDescriptor,
         topUpBalance,
         logs,
         logAccessEvent,

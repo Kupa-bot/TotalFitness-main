@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { loadFaceModels, detectFaceDescriptor, descriptorToArray } from '../utils/face';
 import { useFitness } from '../context/FitnessContext';
 import confetti from 'canvas-confetti';
 import { 
@@ -28,6 +29,39 @@ export default function RegisterModal() {
 
   const [isCapturing, setIsCapturing] = useState(false);
   const [captureProgress, setCaptureProgress] = useState(0);
+  const [cameraReady, setCameraReady] = useState(false);
+  const [cameraError, setCameraError] = useState(null);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+
+  useEffect(() => {
+    if (!isRegisterModalOpen) return;
+    let mounted = true;
+    (async () => {
+      try {
+        await loadFaceModels();
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 320, height: 240 }, audio: false });
+        if (!mounted) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+        }
+        setCameraReady(true);
+      } catch (err) {
+        setCameraError(err?.message || 'Camera unavailable');
+      }
+    })();
+    return () => {
+      mounted = false;
+      if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+      setCameraReady(false);
+    };
+  }, [isRegisterModalOpen]);
 
   if (!isRegisterModalOpen) return null;
 
@@ -36,35 +70,48 @@ export default function RegisterModal() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const { showToast } = useFitness();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
+    if (!cameraReady || !videoRef.current) {
+      showToast('Camera Not Ready', 'Allow camera access to enroll biometric template', 'warning');
+      return;
+    }
 
     setIsCapturing(true);
-    let p = 0;
-    const interval = setInterval(() => {
-      p += 25;
-      setCaptureProgress(p);
-      if (p >= 100) {
-        clearInterval(interval);
-        setTimeout(() => {
-          registerMember(formData);
-          try {
-            confetti({
-              particleCount: 80,
-              spread: 60,
-              origin: { y: 0.6 },
-              colors: ['#d99b26', '#f5af30', '#ffffff', '#10b981']
-            });
-          } catch {
-            // Confetti optional
-          }
-          setIsCapturing(false);
-          setCaptureProgress(0);
-          setIsRegisterModalOpen(false);
-        }, 300);
+    setCaptureProgress(20);
+
+    const descriptor = await detectFaceDescriptor(videoRef.current);
+    setCaptureProgress(70);
+
+    if (!descriptor) {
+      setIsCapturing(false);
+      setCaptureProgress(0);
+      showToast('No Face Detected', 'Position a single face in the camera and retry', 'danger');
+      return;
+    }
+
+    const faceDescriptor = descriptorToArray(descriptor);
+    setCaptureProgress(90);
+
+    setTimeout(() => {
+      registerMember({ ...formData, faceDescriptor });
+      try {
+        confetti({
+          particleCount: 80,
+          spread: 60,
+          origin: { y: 0.6 },
+          colors: ['#d99b26', '#f5af30', '#ffffff', '#10b981']
+        });
+      } catch {
+        // Confetti optional
       }
-    }, 150);
+      setIsCapturing(false);
+      setCaptureProgress(0);
+      setIsRegisterModalOpen(false);
+    }, 300);
   };
 
   return (
@@ -91,8 +138,13 @@ export default function RegisterModal() {
 
         {/* Capture Simulation HUD */}
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col items-center justify-center gap-3 relative overflow-hidden">
-          <div className="relative w-24 h-24 rounded-full border-2 border-dashed border-accentgold/60 flex items-center justify-center bg-slate-950/60 shadow-inner">
-            <ScanFace className={`w-12 h-12 text-accentgold ${isCapturing ? 'animate-pulse scale-110' : ''} transition-all`} />
+          <div className="relative w-40 h-40 rounded-full border-2 border-dashed border-accentgold/60 flex items-center justify-center bg-slate-950/60 shadow-inner overflow-hidden">
+            <video ref={videoRef} className="w-full h-full object-cover scale-x-[-1]" muted playsInline />
+            {!cameraReady && (
+              <div className="absolute inset-0 flex items-center justify-center text-[10px] text-slate-400 text-center px-2">
+                {cameraError || 'Starting camera...'}
+              </div>
+            )}
             {isCapturing && (
               <div className="absolute inset-0 rounded-full border-2 border-accentgold animate-ping opacity-60"></div>
             )}
@@ -104,7 +156,7 @@ export default function RegisterModal() {
               <span>Omni-Access Facial Embedder v4.2</span>
             </div>
             <p className="text-[10px] text-slate-400 mt-0.5">
-              {isCapturing ? `Synthesizing 128-point biometric hash... ${captureProgress}%` : 'Face camera calibrated & ready for 128-point facial landmark registration'}
+              {isCapturing ? `Synthesizing 128-point biometric hash... ${captureProgress}%` : cameraReady ? 'Face camera calibrated & ready for 128-point facial landmark registration' : 'Waiting for camera permission'}
             </p>
           </div>
 
