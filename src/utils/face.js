@@ -43,7 +43,7 @@ export function findBestMatch(descriptor, members) {
   const enrolled = (members || []).filter((m) => Array.isArray(m.faceDescriptor) && m.faceDescriptor.length > 0);
   if (!enrolled.length || !descriptor) return null;
   const labeled = enrolled.map((m) => new faceapi.LabeledFaceDescriptors(m.id, [new Float32Array(m.faceDescriptor)]));
-  const matcher = new faceapi.FaceMatcher(labeled, 0.6);
+  const matcher = new faceapi.FaceMatcher(labeled, 0.5);
   const best = matcher.findBestMatch(descriptor);
   if (best.label === 'unknown') return null;
   const member = enrolled.find((m) => m.id === best.label);
