@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useFitness } from '../context/FitnessContext';
 import { sound } from '../utils/audio';
-import { loadFaceModels, detectFaceDescriptor, findBestMatch } from '../utils/face';
+import { loadFaceModels, detectFaceDescriptor, detectAllFaces, findBestMatch } from '../utils/face';
 import * as faceapi from '@vladmandic/face-api';
 import { 
   Camera, 
@@ -39,7 +39,8 @@ export default function GateTerminalTab() {
     soundMuted,
     toggleSound,
     showToast,
-    updateMemberFaceDescriptor
+    updateMemberFaceDescriptor,
+    recordVisit
   } = useFitness();
 
   const canvasRef = useRef(null);
@@ -49,6 +50,7 @@ export default function GateTerminalTab() {
   const membersRef = useRef(members);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState(null);
+  const [securityAlerts, setSecurityAlerts] = useState([]);
 
   // Current detected subject state in the HUD
   const [currentScan, setCurrentScan] = useState(() => {
@@ -215,16 +217,41 @@ export default function GateTerminalTab() {
     if (scanningRef.current || !cameraActive || !videoRef.current) return;
     scanningRef.current = true;
     try {
-      const descriptor = await detectFaceDescriptor(videoRef.current);
-      if (!descriptor) {
+      const detections = await detectAllFaces(videoRef.current);
+      if (!detections || detections.length === 0) {
         executeScan(null, activeZoneId, (60 + Math.random() * 15).toFixed(1));
+        return;
+      }
+
+      if (detections.length > 1) {
+        const alert = {
+          id: `ALERT-${Date.now()}`,
+          message: `Anti-tailgating: ${detections.length} people detected in frame`,
+          time: new Date().toLocaleTimeString()
+        };
+        setSecurityAlerts((prev) => [alert, ...prev].slice(0, 10));
+        showToast('SECURITY ALERT', `Tailgating detected (${detections.length} faces). Security notified.`, 'danger');
+        sound.speak('Security alert. Tailgating detected.');
+        logAccessEvent({
+          memberId: 'SECURITY',
+          name: 'TAILGATING',
+          tier: 'SECURITY',
+          zone: zones.find((z) => z.id === activeZoneId)?.short || activeZoneId,
+          branch: activeBranch?.shortName || 'Borrowdale HQ',
+          status: 'DENIED',
+          confidence: 0,
+          action: `Anti-tailgating: ${detections.length} faces in single frame`
+        });
+        executeScan(null, activeZoneId, (60 + Math.random() * 15).toFixed(1));
+        return;
+      }
+
+      const descriptor = detections[0].descriptor;
+      const match = findBestMatch(descriptor, membersRef.current);
+      if (match) {
+        executeScan(match.member, activeZoneId, match.confidence);
       } else {
-        const match = findBestMatch(descriptor, membersRef.current);
-        if (match) {
-          executeScan(match.member, activeZoneId, match.confidence);
-        } else {
-          executeScan(null, activeZoneId, (60 + Math.random() * 15).toFixed(1));
-        }
+        executeScan(null, activeZoneId, (60 + Math.random() * 15).toFixed(1));
       }
     } catch {
       executeScan(null, activeZoneId, (60 + Math.random() * 15).toFixed(1));
@@ -258,6 +285,13 @@ export default function GateTerminalTab() {
       };
     }
 
+    if (member.paidUntil && new Date(member.paidUntil) < new Date()) {
+      return {
+        status: 'DENIED',
+        reason: 'Membership Payment Required'
+      };
+    }
+
     const tierPermissions = permissions[member.tier] || {};
     const isAllowed = !!tierPermissions[zoneId];
 
@@ -275,7 +309,7 @@ export default function GateTerminalTab() {
   };
 
   // Perform a simulated scan for a chosen member
-  const executeScan = (member, customZoneId = activeZoneId, confidenceOverride = null) => {
+  const executeScan = (member, customZoneId = activeZoneId, confidenceOverride = null, tailgating = false) => {
     setIsScanning(true);
     sound.playScan();
 
@@ -287,11 +321,16 @@ export default function GateTerminalTab() {
       : (68.4 + Math.random() * 10).toFixed(1);
 
     setTimeout(() => {
-      const evaluation = evaluateAccess(member, customZoneId);
+      const evaluation = tailgating
+        ? { status: 'DENIED', reason: 'Tailgating Detected - Multiple Persons' }
+        : evaluateAccess(member, customZoneId);
       const isGranted = evaluation.status === 'GRANTED';
 
       if (isGranted) {
         sound.playSuccess();
+        if (member && member.id && member.id !== 'UNREGISTERED') {
+          recordVisit(member.id);
+        }
       } else {
         sound.playDenied();
       }
@@ -718,6 +757,26 @@ export default function GateTerminalTab() {
                   )}
                 </span>
               </div>
+            </div>
+          </div>
+
+          {/* Security Alerts */}
+          <div className="bg-cardbg border border-red-500/30 rounded-2xl p-5 flex flex-col gap-3 shadow-xl">
+            <h4 className="font-bold text-white text-xs uppercase tracking-wider text-red-300 flex items-center justify-between">
+              <span>Security Alerts (Anti-Tailgating)</span>
+              <span className="text-[10px] text-red-400 font-mono">{securityAlerts.length} events</span>
+            </h4>
+            <div className="space-y-2 max-h-40 overflow-y-auto">
+              {securityAlerts.length === 0 ? (
+                <div className="text-xs text-slate-500 italic">No suspicious activity detected.</div>
+              ) : (
+                securityAlerts.map((a) => (
+                  <div key={a.id} className="text-xs p-2 rounded-lg bg-red-950/40 border border-red-500/30 text-red-300">
+                    <div className="font-semibold">{a.message}</div>
+                    <div className="text-[10px] text-red-400/70">{a.time}</div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 

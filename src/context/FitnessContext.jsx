@@ -28,9 +28,16 @@ export function FitnessProvider({ children }) {
   const [activeZoneId, setActiveZoneId] = useState('turnstile');
 
   // Members
+  const normalizeMember = (m) => ({
+    ...m,
+    paidUntil: m.paidUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    visitHistory: Array.isArray(m.visitHistory) ? m.visitHistory : []
+  });
+
   const [members, setMembers] = useState(() => {
     const saved = localStorage.getItem('tf_members');
-    return saved ? JSON.parse(saved) : INITIAL_MEMBERS;
+    const base = saved ? JSON.parse(saved) : INITIAL_MEMBERS;
+    return base.map(normalizeMember);
   });
 
   // Access Logs
@@ -188,7 +195,12 @@ export function FitnessProvider({ children }) {
       biometricQuality: 99.4,
       avatar: memberData.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
       visitsThisMonth: 1,
-      faceDescriptor: memberData.faceDescriptor || null
+      faceDescriptor: memberData.faceDescriptor || null,
+      paidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      visitCount: 0,
+      totalVisitMinutes: 0,
+      openVisitStart: null,
+      lastVisitDuration: null
     };
 
     setMembers((prev) => [newMember, ...prev]);
@@ -244,6 +256,32 @@ export function FitnessProvider({ children }) {
   const updateMemberFaceDescriptor = (memberId, descriptor) => {
     setMembers((prev) =>
       prev.map((m) => (m.id === memberId ? { ...m, faceDescriptor: descriptor ? Array.from(descriptor) : null } : m))
+    );
+  };
+
+  const recordVisit = (memberId) => {
+    setMembers((prev) =>
+      prev.map((m) => {
+        if (m.id !== memberId) return m;
+        const now = Date.now();
+        if (m.openVisitStart) {
+          const minutes = Math.max(1, Math.round((now - m.openVisitStart) / 60000));
+          return {
+            ...m,
+            openVisitStart: null,
+            totalVisitMinutes: (m.totalVisitMinutes || 0) + minutes,
+            lastVisitDuration: minutes,
+            lastVisit: new Date().toISOString().split('T')[0]
+          };
+        }
+        return {
+          ...m,
+          openVisitStart: now,
+          visitCount: (m.visitCount || 0) + 1,
+          visitsThisMonth: (m.visitsThisMonth || 0) + 1,
+          lastVisit: new Date().toISOString().split('T')[0]
+        };
+      })
     );
   };
 
@@ -427,6 +465,7 @@ export function FitnessProvider({ children }) {
         toggleMemberStatus,
         deleteMember,
         updateMemberFaceDescriptor,
+        recordVisit,
         topUpBalance,
         logs,
         logAccessEvent,
