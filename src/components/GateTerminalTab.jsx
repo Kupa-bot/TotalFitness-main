@@ -47,10 +47,12 @@ export default function GateTerminalTab() {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const scanningRef = useRef(false);
+  const lastScanRef = useRef({ id: null, time: 0 });
   const membersRef = useRef(members);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState(null);
   const [securityAlerts, setSecurityAlerts] = useState([]);
+  const [autoScan, setAutoScan] = useState(true);
 
   // Current detected subject state in the HUD
   const [currentScan, setCurrentScan] = useState(() => {
@@ -212,14 +214,19 @@ export default function GateTerminalTab() {
     };
   }, []);
 
-  // Manual single-scan handler (one scan at a time)
-  const handleCameraScan = async () => {
+  // Single-scan processor (one scan at a time; manual scans bypass dedupe)
+  const processCameraScan = async (isManual = false) => {
     if (scanningRef.current || !cameraActive || !videoRef.current) return;
     scanningRef.current = true;
+    let executed = false;
     try {
       const detections = await detectAllFaces(videoRef.current);
       if (!detections || detections.length === 0) {
-        executeScan(null, activeZoneId, (60 + Math.random() * 15).toFixed(1));
+        if (isManual) {
+          lastScanRef.current = { id: 'UNKNOWN', time: Date.now() };
+          executeScan(null, activeZoneId, (60 + Math.random() * 15).toFixed(1));
+          executed = true;
+        }
         return;
       }
 
@@ -242,25 +249,58 @@ export default function GateTerminalTab() {
           confidence: 0,
           action: `Anti-tailgating: ${detections.length} faces in single frame`
         });
+        lastScanRef.current = { id: 'TAILGATING', time: Date.now() };
         executeScan(null, activeZoneId, (60 + Math.random() * 15).toFixed(1));
+        executed = true;
         return;
       }
 
       const descriptor = detections[0].descriptor;
       const match = findBestMatch(descriptor, membersRef.current);
+      const subjectId = match ? match.member.id : 'UNKNOWN';
+      const now = Date.now();
+
+      // Auto mode: skip if the same subject was scanned recently
+      if (
+        !isManual &&
+        lastScanRef.current.id === subjectId &&
+        now - lastScanRef.current.time < 8000
+      ) {
+        return;
+      }
+
+      lastScanRef.current = { id: subjectId, time: now };
+      executed = true;
       if (match) {
         executeScan(match.member, activeZoneId, match.confidence);
       } else {
         executeScan(null, activeZoneId, (60 + Math.random() * 15).toFixed(1));
       }
     } catch {
-      executeScan(null, activeZoneId, (60 + Math.random() * 15).toFixed(1));
+      if (isManual) {
+        executeScan(null, activeZoneId, (60 + Math.random() * 15).toFixed(1));
+        executed = true;
+      }
     } finally {
-      setTimeout(() => {
+      if (executed) {
+        setTimeout(() => {
+          scanningRef.current = false;
+        }, 900);
+      } else {
         scanningRef.current = false;
-      }, 900);
+      }
     }
   };
+
+  // Auto-scan loop: recognizes whoever appears, one scan at a time
+  useEffect(() => {
+    if (!cameraActive || !autoScan) return;
+    const interval = setInterval(() => {
+      processCameraScan(false);
+    }, 1500);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameraActive, autoScan, activeZoneId]);
 
   // Determine access decision based on member tier and current active zone policy
   const evaluateAccess = (member, zoneId) => {
@@ -596,8 +636,21 @@ export default function GateTerminalTab() {
                 </button>
 
                 <button
+                  onClick={() => setAutoScan((p) => !p)}
+                  title="Toggle automatic face recognition"
+                  className={`font-bold text-xs px-3 py-2 rounded-xl shadow-lg flex items-center gap-1.5 transition-all border ${
+                    autoScan
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                      : 'bg-black/80 text-slate-400 border-slate-700'
+                  }`}
+                >
+                  <Zap className={`w-3.5 h-3.5 ${autoScan ? 'animate-pulse' : ''}`} />
+                  <span>Auto Scan: {autoScan ? 'ON' : 'OFF'}</span>
+                </button>
+
+                <button
                   disabled={isScanning || !cameraActive}
-                  onClick={handleCameraScan}
+                  onClick={() => processCameraScan(true)}
                   className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-lg flex items-center gap-1.5 transition-all disabled:opacity-50"
                 >
                   <Camera className={`w-3.5 h-3.5 ${isScanning ? 'animate-pulse' : ''}`} />
